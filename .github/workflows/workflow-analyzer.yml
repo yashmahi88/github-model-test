@@ -267,7 +267,9 @@ jobs:
           echo "analysis_result=$(cat analysis_result.json | jq -c .)" >> $GITHUB_OUTPUT
           
           # Also save for artifact
-          cp analysis_result.json $GITHUB_WORKSPACE/
+          if [ "$(realpath analysis_result.json)" != "$(realpath $GITHUB_WORKSPACE/analysis_result.json)" ]; then
+            cp analysis_result.json $GITHUB_WORKSPACE/
+          fi
 
       - name: Process Analysis Results
         id: process-results
