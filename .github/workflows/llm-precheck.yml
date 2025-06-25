@@ -1,51 +1,63 @@
-# .github/workflows/llm-precheck.yml
-
-name: LLM Workflow Precheck
+name: GitHub Models Workflow Precheck
 
 on:
-  workflow_call:  # This makes it reusable by other workflows
+  workflow_call:
 
 jobs:
   precheck:
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # ✅ use for API auth
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install GitHub CLI & GitHub Models
+      - name: Build prompt from calling workflow
         run: |
-          sudo apt-get update && sudo apt-get install -y gh
-          gh extension install github/gh-models
+          echo "You're a GitHub Actions expert. Analyze this workflow and tell me:
+- Will it likely fail?
+- Why?
+- How to fix it?
+---" > prompt.txt
 
-      - name: Get Calling Workflow File
+          WORKFLOW_NAME=$(basename "${{ github.workflow_ref }}")
+          cat ".github/workflows/$WORKFLOW_NAME" >> prompt.txt || echo "⚠ Missing workflow"
+
+      - name: Call GitHub Models API
         run: |
-          echo "${{ github.workflow_ref }}" > workflow-ref.txt
+          PROMPT=$(<prompt.txt)
 
-      - name: Build Prompt
-        run: |
-          echo "Analyze the following workflow YAML and predict if it will fail. Give reasons and suggestions." > prompt.txt
-          cat .github/workflows/${{ github.workflow_ref }} >> prompt.txt || echo "⚠ Could not find workflow file"
+          curl -s "https://models.github.ai/inference/chat/completions" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d @- <<EOF > model_response.json
+{
+  "model": "openai/gpt-4o",
+  "messages": [
+    {
+      "role": "user",
+      "content": "$PROMPT"
+    }
+  ]
+}
+EOF
 
-      - name: Run GitHub Model
-        run: |
-          gh models chat \
-            --model phi-3-medium-128k-instruct \
-            --prompt-file prompt.txt > model_response.txt
-
-          echo "Model said:"
-          cat model_response.txt
+          echo "✅ Raw Response:"
+          cat model_response.json | jq '.choices[0].message.content' > model_response.txt
 
       - name: Upload Report
         uses: actions/upload-artifact@v4
         with:
-          name: precheck-report
+          name: model-analysis
           path: model_response.txt
 
-      - name: Fail if Predicted Failure
+      - name: Exit if Failure Predicted
         run: |
-          if grep -iE 'likely.*fail|error|incorrect|fail to' model_response.txt; then
-            echo "❌ Predicted to fail"
+          cat model_response.txt
+          if grep -iE 'fail|error|likely.*fail|fix|issue' model_response.txt; then
+            echo "❌ Workflow predicted to fail"
             exit 1
+          else
+            echo "✅ Safe to run"
           fi
