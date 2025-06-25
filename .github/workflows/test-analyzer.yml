@@ -1,0 +1,64 @@
+# .github/workflows/test-analyzer.yml
+# Test workflow to verify the analyzer is working
+name: Test Analyzer
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of test to run'
+        required: true
+        default: 'success'
+        type: choice
+        options:
+        - success
+        - failure
+        - syntax_error
+
+jobs:
+  test-success:
+    if: github.event.inputs.test_type == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Simple Success Test
+        run: |
+          echo "This should pass analysis and run successfully"
+          echo "Current date: $(date)"
+          echo "Repository: ${{ github.repository }}"
+
+  test-failure:
+    if: github.event.inputs.test_type == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Install Non-existent Package
+        run: |
+          # This should be detected as likely to fail
+          npm install non-existent-package-that-does-not-exist-12345
+          
+      - name: Use Missing Environment Variable
+        run: |
+          # This should trigger analysis warnings
+          echo "Using missing env var: $MISSING_ENV_VAR"
+          curl -H "Authorization: Bearer $MISSING_API_KEY" https://api.example.com/data
+
+  test-syntax-error:
+    if: github.event.inputs.test_type == 'syntax_error'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Invalid Command
+        run: |
+          # This has syntax issues that should be detected
+          invalid-command-that-does-not-exist
+          python -c "print('missing quote)
+          
+      - name: Wrong Action Version
+        uses: actions/checkout@v999  # Non-existent version

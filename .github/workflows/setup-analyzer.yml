@@ -1,0 +1,141 @@
+# .github/workflows/setup-analyzer.yml
+# One-time setup workflow to configure the analyzer
+name: Setup GitHub Models Workflow Analyzer
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/workflow-analyzer.yml'
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+      issues: write
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Create Analyzer Configuration
+        run: |
+          mkdir -p .github/analyzer-config
+          
+          cat > .github/analyzer-config/settings.json << 'EOF'
+          {
+            "enabled": true,
+            "model": "gpt-4o",
+            "confidence_threshold": 70,
+            "risk_levels": {
+              "auto_cancel": ["CRITICAL"],
+              "create_issue": ["HIGH", "CRITICAL"],
+              "require_approval": ["MEDIUM", "HIGH", "CRITICAL"]
+            },
+            "excluded_workflows": [
+              "workflow-analyzer.yml",
+              "setup-analyzer.yml"
+            ],
+            "notification_settings": {
+              "slack_webhook": "",
+              "email_notifications": false,
+              "teams_webhook": ""
+            },
+            "analysis_rules": {
+              "check_dependencies": true,
+              "validate_syntax": true,
+              "check_permissions": true,
+              "analyze_resource_usage": true,
+              "check_external_dependencies": true,
+              "validate_environment_vars": true
+            }
+          }
+          EOF
+
+      - name: Create Analysis Templates
+        run: |
+          mkdir -p .github/ISSUE_TEMPLATE
+          
+          cat > .github/ISSUE_TEMPLATE/workflow-failure-prediction.md << 'EOF'
+          ---
+          name: Workflow Failure Prediction
+          about: Automatically created when workflow failure is predicted
+          title: "🚨 Workflow Failure Predicted: [WORKFLOW_NAME]"
+          labels: ["workflow-analysis", "predicted-failure", "needs-attention"]
+          assignees: []
+          ---
+
+          ## 🔍 Analysis Summary
+          <!-- This will be filled automatically by the analyzer -->
+
+          ## 📋 Checklist
+          - [ ] Review identified issues
+          - [ ] Apply suggested solutions
+          - [ ] Test fixes in feature branch
+          - [ ] Re-run workflow analysis
+          - [ ] Verify workflow passes
+
+          ## 🔗 Related
+          - Workflow file: `.github/workflows/[WORKFLOW_FILE]`
+          - Analysis artifacts: [Link to artifacts]
+          - Commit: [COMMIT_SHA]
+
+          ---
+          *This issue was automatically created by GitHub Models Workflow Analyzer*
+          EOF
+
+      - name: Create README for Analyzer
+        run: |
+          cat > .github/analyzer-config/README.md << 'EOF'
+          # GitHub Models Workflow Analyzer
+
+          This directory contains configuration and documentation for the GitHub Models Workflow Analyzer system.
+
+          ## 🎯 Purpose
+          The analyzer uses GitHub Models to predict workflow failures before they occur, saving time and resources by:
+          - Analyzing workflow files for potential issues
+          - Predicting success/failure with confidence scores
+          - Automatically canceling high-risk workflows
+          - Creating detailed issue reports with solutions
+          - Providing improvement recommendations
+
+          ## 📁 Files
+          - `settings.json`: Main configuration file
+          - `README.md`: This documentation file
+
+          ## ⚙️ Configuration
+          Edit `settings.json` to customize:
+          - Model selection and thresholds
+          - Risk level handling
+          - Excluded workflows
+          - Notification settings
+          - Analysis rules
+
+          ## 🔧 Usage
+          The analyzer runs automatically on all workflows. Manual analysis can be triggered via workflow dispatch.
+
+          ## 📊 Reports
+          Analysis results are available in:
+          - GitHub Issues (for predicted failures)
+          - Job summaries
+          - Uploaded artifacts
+          - PR comments (when applicable)
+
+          ## 🛠️ Troubleshooting
+          If the analyzer isn't working:
+          1. Check GitHub Models API access
+          2. Verify repository permissions
+          3. Review workflow logs
+          4. Check configuration settings
+          EOF
+
+      - name: Commit Configuration Files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .github/analyzer-config/
+          git add .github/ISSUE_TEMPLATE/workflow-failure-prediction.md
+          git diff --staged --quiet || git commit -m "Add GitHub Models Workflow Analyzer configuration"
+          git push
