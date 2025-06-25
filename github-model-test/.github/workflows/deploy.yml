@@ -1,0 +1,21 @@
+# .github/workflows/deploy.yml
+
+name: Deploy Workflow
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  precheck:
+    uses: ./.github/workflows/llm-precheck.yml
+
+  deploy:
+    needs: precheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy code
+        run: echo "🚀 Deployment running"

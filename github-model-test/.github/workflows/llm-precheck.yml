@@ -1,0 +1,49 @@
+# .github/workflows/llm-precheck.yml
+
+name: LLM Workflow Precheck
+
+on:
+  workflow_call:  # This makes it reusable by other workflows
+
+jobs:
+  precheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install GitHub CLI & GitHub Models
+        run: |
+          sudo apt-get update && sudo apt-get install -y gh
+          gh extension install github/gh-models
+
+      - name: Get Calling Workflow File
+        run: |
+          echo "${{ github.workflow_ref }}" > workflow-ref.txt
+
+      - name: Build Prompt
+        run: |
+          echo "Analyze the following workflow YAML and predict if it will fail. Give reasons and suggestions." > prompt.txt
+          cat .github/workflows/${{ github.workflow_ref }} >> prompt.txt || echo "⚠ Could not find workflow file"
+
+      - name: Run GitHub Model
+        run: |
+          gh models chat \
+            --model phi-3-medium-128k-instruct \
+            --prompt-file prompt.txt > model_response.txt
+
+          echo "Model said:"
+          cat model_response.txt
+
+      - name: Upload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: precheck-report
+          path: model_response.txt
+
+      - name: Fail if Predicted Failure
+        run: |
+          if grep -iE 'likely.*fail|error|incorrect|fail to' model_response.txt; then
+            echo "❌ Predicted to fail"
+            exit 1
+          fi
