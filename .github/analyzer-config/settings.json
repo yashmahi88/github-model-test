@@ -1,0 +1,27 @@
+{
+  "enabled": true,
+  "model": "gpt-4o",
+  "confidence_threshold": 70,
+  "risk_levels": {
+    "auto_cancel": ["CRITICAL"],
+    "create_issue": ["HIGH", "CRITICAL"],
+    "require_approval": ["MEDIUM", "HIGH", "CRITICAL"]
+  },
+  "excluded_workflows": [
+    "workflow-analyzer.yml",
+    "setup-analyzer.yml"
+  ],
+  "notification_settings": {
+    "slack_webhook": "",
+    "email_notifications": false,
+    "teams_webhook": ""
+  },
+  "analysis_rules": {
+    "check_dependencies": true,
+    "validate_syntax": true,
+    "check_permissions": true,
+    "analyze_resource_usage": true,
+    "check_external_dependencies": true,
+    "validate_environment_vars": true
+  }
+}
