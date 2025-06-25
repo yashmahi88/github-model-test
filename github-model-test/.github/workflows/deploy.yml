@@ -4,7 +4,7 @@ name: Deploy Workflow
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master]
 
 jobs:
   precheck:
