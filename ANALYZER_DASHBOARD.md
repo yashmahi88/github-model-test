@@ -1,19 +1,19 @@
 # 🔍 GitHub Models Workflow Analyzer Dashboard
 
-> Last updated: 2025-07-21
+> Last updated: 2025-07-28
 
 ## 📊 Analytics Overview
 
 | Metric | Value |
 |--------|-------|
-| Total Workflow Runs | 22 |
-| Total Analyses Performed | 8 |
-| Successful Analyses | 5 |
-| Analysis Success Rate | 62.5% |
+| Total Workflow Runs | 24 |
+| Total Analyses Performed | 9 |
+| Successful Analyses | 6 |
+| Analysis Success Rate | 66.7% |
 | Predicted Failures | 0 |
 | Actual Workflow Failures | 8 |
-| Recent Failure Rate | 30.0% |
-| Last Analysis | 7/21/2025 |
+| Recent Failure Rate | 20.0% |
+| Last Analysis | 7/28/2025 |
 
 ## 🎯 System Performance
 
@@ -30,7 +30,7 @@ The GitHub Models Workflow Analyzer is actively monitoring all repository workfl
 
 
 ### Analysis Effectiveness
-- **Prediction Accuracy**: 62.5% of analyses complete successfully
+- **Prediction Accuracy**: 66.7% of analyses complete successfully
 - **Issue Prevention**: 0 potential failures identified
 - **Time Savings**: Estimated 0 minutes saved from prevented failed runs
 
